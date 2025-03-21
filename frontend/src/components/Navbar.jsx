@@ -12,7 +12,7 @@ const Navbar = () => {
             <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto'/>
           </NavLink>
           <NavLink>
-            <li className='py-1'>ABOUT</li>
+            <li className='py-1'>ABOUT USs</li>
             <hr className='border-none outline-none h-0.5 bg-primary w-3/5 m-auto'/>
           </NavLink>
           <NavLink>

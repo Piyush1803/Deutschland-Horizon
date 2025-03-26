@@ -35,7 +35,7 @@ const Footer = () => {
         {/*-----coyright text-----*/}
         <div>
             <hr />
-            <p className='py-5 text-sm text-center'>Copyright 2025@ Dutchland - All Right Reserved</p>
+           {/* <p className='py-5 text-sm text-center'>Copyright 2025@ Dutchland - All Right Reserved</p>*/}
         </div>
     </div>
   )

@@ -23,10 +23,7 @@ const Navbar = () => {
           <li className="py-1 hover:text-purple-600 transition-colors">LOGIN</li>
           <hr className="border-none h-0.5 bg-purple-600 w-3/5 mx-auto hidden group-hover:block" />
         </NavLink>
-        <NavLink to="/contact" className="group">
-          <li className="py-1 hover:text-purple-600 transition-colors">CONTACT</li>
-          <hr className="border-none h-0.5 bg-purple-600 w-3/5 mx-auto hidden group-hover:block" />
-        </NavLink>
+       
       </ul>
       <div className="flex items-center gap-4">
         {token ? (

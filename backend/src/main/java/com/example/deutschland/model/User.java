@@ -1,40 +1,44 @@
 package com.example.deutschland.model;
 
+import lombok.Getter;
+import lombok.Setter;
 
-import lombok.Data;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.persistence.*;
+
+@Setter
+@Getter
 @Entity
-@Data
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="full_name", unique = true, nullable = false)
-    private String fullName;  
+    @JsonProperty("full_name") 
+    @Column(name="full_name", nullable = false)
+    private String fullName;
 
-    @Column(name="phone_no", unique = true, nullable = false)
-    private String phoneNo; 
+    @JsonProperty("phone_no")
+    @Column(name="phone_no", nullable = false)
+    private String phoneNo;
 
     @Column(name="gender", nullable = false)
     private int gender;
 
+    @JsonProperty("user_name")
     @Column(name="user_name", unique = true, nullable = false)
     private String userName;
 
-    @Column(name = "user_password", unique = true,nullable = false)
-    private String password;  
+    @JsonProperty("password")
+    @Column(name = "user_password", nullable = false)
+    private String password;
 
-    @ManyToOne
-    @JoinColumn(name = "role_id")
-    private Role role;
+    // @ManyToOne
+    // @JoinColumn(name = "role_id")
+    // private Role role;
 
+    // @Column(name="fk_role_id")
+    // private Long fkRoleId;
 }

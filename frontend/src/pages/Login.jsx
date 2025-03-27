@@ -17,42 +17,79 @@ const countryCodes = [
 
 const Login = () => {
   const [state, setState] = useState("Sign Up");
-  const [name, setName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [phoneNo, setPhoneNo] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [userName, setUserName] = useState("");
-  const [gender, setGender] = useState("MALE");
+  const [gender, setGender] = useState(1);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
-
-
   const onSubmitHandler = async (event) => {
     event.preventDefault();
     setError("");
-
+  
     try {
       const endpoint = state === "Sign Up" ? "/api/auth/register" : "/api/auth/login";
-      const fullPhoneNumber = `${countryCode} ${phoneNo}`; // Combine country code and phone number
-
-      const payload =
-        state === "Sign Up"
-          ? { name, phoneNo: fullPhoneNumber, gender, email, password }
-          : { email, password };
-
-      const response = await axios.post(`http://localhost:8080${endpoint}`, payload);
-
+      const fullPhoneNumber = `${countryCode} ${phoneNo}`.trim();
+  
+      // ✅ Proper validation for Sign Up
+      if (
+        !userName || 
+        !password || 
+        (state === "Sign Up" && (!fullName || !phoneNo.trim()))
+      ) {
+        setError("All fields are required.");
+        return;
+      }
+  
+      let payload;
       if (state === "Sign Up") {
-        alert("Account created successfully! Please login.");
-        setState("Login");
+        payload = {
+          full_name: fullName,
+          phone_no: fullPhoneNumber,
+          user_name: userName,
+          gender: parseInt(gender, 10),
+          password,
+        };
       } else {
+        payload = {
+          user_name: userName,
+          password,
+        };
+      }
+  
+      console.log("Payload before sending:", payload);
+  
+      const response = await axios.post(`http://localhost:8080${endpoint}`, payload);
+  
+      if (state === "Sign Up") {
+        alert("Account created successfully! Please log in.");
+        setState("Login");
+  
+        // ✅ Reset form only after successful Sign Up
+        setFullName("");
+        setPhoneNo("");
+        setCountryCode("+91");
+        setGender(1);
+        setUserName("");
+        setPassword("");
+      }
+  
+      if (state === "Login") {
         localStorage.setItem("token", response.data.token);
         navigate("/my-profile");
+  
+        // ✅ Reset login fields after successful login
+        setUserName("");
+        setPassword("");
       }
     } catch (err) {
-      setError("Error occurred! " + (err.response?.data || ""));
+      setError("Error occurred! " + (err.response?.data?.message || "Please try again."));
     }
   };
+  
+
 
   return (
     <form className="min-h-[80vh] flex items-center" onSubmit={onSubmitHandler}>
@@ -71,8 +108,9 @@ const Login = () => {
               <input
                 className="border border-zinc-300 rounded w-full p-2 mt-1"
                 type="text"
-                onChange={(e) => setName(e.target.value)}
-                value={name}
+                onChange={(e) => setFullName(e.target.value)}
+                value={fullName}
+                autoComplete="off"
                 required
               />
             </div>
@@ -97,6 +135,7 @@ const Login = () => {
                   type="number"
                   onChange={(e) => setPhoneNo(e.target.value)}
                   value={phoneNo}
+                  autoComplete="off"
                   required
                 />
               </div>
@@ -125,6 +164,7 @@ const Login = () => {
             type="text"
             onChange={(e) => setUserName(e.target.value)}
             value={userName}
+            autoComplete="off"
             required
           />
         </div>
@@ -136,6 +176,7 @@ const Login = () => {
             type="password"
             onChange={(e) => setPassword(e.target.value)}
             value={password}
+            autoComplete="new-password"
             required
           />
         </div>

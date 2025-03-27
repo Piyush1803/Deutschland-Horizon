@@ -10,6 +10,9 @@ import Eight from './eight.jpg'
 import Nine from './nine.jpg'
 import Ten from './ten.jpg'
 import Eleven from './eleven.jpg'
+import dropdown_icon from './dropdown_icon.svg'
+import profile_pic from './profile_pic.png'
+
 
 export const assets ={
     logo,
@@ -23,7 +26,10 @@ export const assets ={
     Eight,
     Nine,
     Ten,
-    Eleven
+    Eleven,
+    dropdown_icon,
+    profile_pic
+
 
 }
 

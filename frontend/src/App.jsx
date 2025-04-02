@@ -23,7 +23,6 @@ function App() {
         <Route path='/appointment' element={<Appointment />} />
 
       </Routes>
-
       <Footer />
 
     </div>

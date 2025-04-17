@@ -12,3 +12,6 @@ router.get("/available", fetchAvailableSlots);
 router.post("/book", handleBookAppointment);
 
 export default router;
+
+
+

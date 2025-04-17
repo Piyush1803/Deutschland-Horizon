@@ -22,9 +22,9 @@ export const getAvailableSlots = (date, callback) => {
 
 // Book an appointment slot by ID and update name/email/is_booked
 export const bookAppointment = (appointmentData, callback) => {
-  const query = `
+    const query = `
     UPDATE appointments
-    SET name = ?, email = ?, is_booked = TRUE
+    SET name = ?, email = ?, is_booked = TRUE, end_time = start_time + INTERVAL 3 HOUR
     WHERE id = ? AND is_booked = FALSE
   `;
   const { name, email, id } = appointmentData;

@@ -6,7 +6,9 @@ import "react-datepicker/dist/react-datepicker.css";
 const AppointmentModal = ({ closeModal }) => {
   const [availableDates, setAvailableDates] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(null);
   const [selectedDateTime, setSelectedDateTime] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     email: ""
@@ -22,51 +24,46 @@ const AppointmentModal = ({ closeModal }) => {
   }, []);
 
   const handleDateChange = (date) => {
-    const selectedDate = date.toISOString().split("T")[0];
-    // Fetch available slots for the selected date
-    axios.get(`http://localhost:8080/api/appointments/available?date=${selectedDate}`)
+    setSelectedDate(date);
+    setSelectedDateTime(null); // reset selected time when date changes
+    const selectedDateStr = date.toISOString().split("T")[0];
+    axios.get(`http://localhost:8080/api/appointments/available?date=${selectedDateStr}`)
       .then(res => {
-        // Filter slots that are available (not booked)
         const slotTimes = res.data.map(slot => {
-          const [hour, minute] = slot.startTime.split(":");
+          const [hour, minute, second] = slot.startTime.split(":");
           const newDate = new Date(date);
-          newDate.setHours(hour, minute, 0, 0);
+          newDate.setHours(hour, minute, second, 0);
           return {
             id: slot.id,
             time: newDate,
             isBooked: slot.is_booked
           };
         });
-        setAvailableSlots(slotTimes); // Update available slots for the selected date
+        setAvailableSlots(slotTimes);
       })
       .catch(err => console.error("Error fetching slots", err));
-
-    setSelectedDateTime(date); // Set selected date temporarily without time
-  };
-
-  const handleDateTimeChange = (dateTime) => {
-    setSelectedDateTime(dateTime);
   };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleSlotSelect = (slot) => {
+    setSelectedDateTime(slot.time);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate if a date and time is selected
     if (!selectedDateTime) {
       alert("Please select a valid date and time.");
       return;
     }
 
-    // Find the slot from the available slots that matches the selected date/time
     const selectedSlot = availableSlots.find(
       (slot) => slot.time.getTime() === selectedDateTime.getTime() && !slot.isBooked
     );
 
-    // If no slot is available or selected slot is already booked
     if (!selectedSlot) {
       alert("Selected time is not available. Please choose another time.");
       return;
@@ -78,10 +75,9 @@ const AppointmentModal = ({ closeModal }) => {
         name: formData.name,
         email: formData.email
       };
-      // Submit the booking request to the backend
       await axios.post("http://localhost:8080/api/appointments/book", payload);
       alert("Appointment booked successfully!");
-      closeModal(); // Close the modal on successful booking
+      closeModal();
     } catch (error) {
       console.error("Error booking appointment:", error);
       alert("Failed to book appointment. Please try again.");
@@ -114,44 +110,41 @@ const AppointmentModal = ({ closeModal }) => {
           />
 
           <div className="flex flex-col">
-            <label className="mb-1 font-medium">Select Date & Time</label>
+            <label className="mb-1 font-medium">Select Date</label>
             <DatePicker
-              selected={selectedDateTime}
-              onChange={handleDateTimeChange}
-              onSelect={handleDateChange}
-              showTimeSelect
-              timeFormat="HH:mm"
-              timeIntervals={30}
-              dateFormat="yyyy-MM-dd HH:mm"
-              placeholderText="Pick a date and time"
+              selected={selectedDate}
+              onChange={handleDateChange}
+              includeDates={availableDates}
+              dateFormat="yyyy-MM-dd"
+              placeholderText="Pick a date"
               className="border border-gray-300 p-3 rounded-lg w-full"
               required
             />
           </div>
 
           {/* Available Slots List */}
-          {availableSlots.length === 0 && selectedDateTime && (
-            <div className="mt-2 text-sm text-red-600">
-              <p>No available slots on this date.</p>
-            </div>
-          )}
-
-          {availableSlots.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">
-              <p className="font-medium mb-1">Available slots for selected date:</p>
-              <ul className="list-disc pl-5">
-                {availableSlots.map((slot) => (
-                  <li
-                    key={slot.id}
-                    className={`cursor-pointer ${slot.isBooked ? "text-gray-400" : "text-blue-600"}`}
-                    onClick={() => !slot.isBooked && handleDateTimeChange(slot.time)}
-                  >
-                    {slot.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    {slot.isBooked && " (Booked)"}
-                  </li>
-                ))}
-              </ul>
-            </div>
+          {selectedDate && (
+            availableSlots.length > 0 ? (
+              <div className="mt-2 text-sm text-gray-600">
+                <p className="font-medium mb-1">Available slots:</p>
+                <ul className="list-disc pl-5">
+                  {availableSlots.map((slot) => (
+                    <li
+                      key={slot.id}
+                      className={`cursor-pointer ${slot.isBooked ? "text-gray-400" : (selectedDateTime?.getTime() === slot.time.getTime() ? "text-purple-600 font-bold" : "text-blue-600")}`}
+                      onClick={() => !slot.isBooked && handleSlotSelect(slot)}
+                    >
+                      {slot.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {slot.isBooked && " (Booked)"}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="mt-2 text-sm text-red-600">
+                <p>No available slots on this date.</p>
+              </div>
+            )
           )}
 
           <button

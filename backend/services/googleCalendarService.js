@@ -42,7 +42,17 @@ export async function createGoogleCalendarEvent(appointment) {
       dateTime: appointment.end_time,
       timeZone: "Asia/Kolkata",
     },
+    conferenceData: {
+      createRequest: {
+        requestId: `meet-${Date.now()}`,
+        conferenceSolutionKey: {
+          type: "hangoutsMeet"
+        }
+      }
+    }
+
   };
+  
 
   const response = await calendar.events.insert({
     calendarId,

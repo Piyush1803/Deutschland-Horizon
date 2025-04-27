@@ -14,7 +14,8 @@ npm-debug.log*
 Thumbs.db
 
 # Service Account JSON keys (Google Cloud, etc.)
-/config/calendar-service-account.json
+backend/config/calendar-service-account.json
+
 
 # Database dump files
 *.sql
@@ -28,5 +29,8 @@ build/
 
 # Misc
 .idea/
+
+
+backend/config/*.json
 
 

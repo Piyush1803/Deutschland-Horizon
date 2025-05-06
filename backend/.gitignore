@@ -5,7 +5,7 @@ node_modules/
 .env
 
 # Logs
-logs/
+logs/ch
 *.log
 npm-debug.log*
 
@@ -32,5 +32,4 @@ build/
 
 
 backend/config/*.json
-
 

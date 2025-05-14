@@ -7,13 +7,18 @@ import cors from "cors";
 
 dotenv.config();
 const app = express();
-
 app.use(cors());
-app.use(bodyParser.json());
 
+// Raw body required *before* express.json() for Stripe webhook
+app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
+
+app.use(bodyParser.json()); // Normal JSON parsing for other routes
+
+// Routes
 app.use("/api/appointments", appointmentRoutes);
-app.use("/api/payment", paymentRoutes);
+app.use("/api/payments", paymentRoutes);
 
+// Start server
 app.listen(8080, () => {
   console.log("Server running on port 8080");
 });

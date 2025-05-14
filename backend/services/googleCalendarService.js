@@ -24,11 +24,7 @@ const calendarId = "germanysoon0@gmail.com";
 
 // Function to create an event
 export async function createGoogleCalendarEvent(appointment) {
-
-    // Parse the start time
   const startTime = new Date(appointment.start_time);
-
-  // Calculate the end time by adding 3 hours
   const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
 
   const event = {
@@ -36,27 +32,18 @@ export async function createGoogleCalendarEvent(appointment) {
     description: `Email: ${appointment.email}`,
     start: {
       dateTime: appointment.start_time,
-      timeZone: "Asia/Kolkata",// adjust timezone if needed
+      timeZone: "Asia/Kolkata",
     },
     end: {
       dateTime: appointment.end_time,
       timeZone: "Asia/Kolkata",
     },
-    conferenceData: {
-      createRequest: {
-        requestId: `meet-${Date.now()}`,
-        conferenceSolutionKey: {
-          type: "hangoutsMeet"
-        }
-      }
-    }
-
   };
-  
 
   const response = await calendar.events.insert({
     calendarId,
     resource: event,
+    sendUpdates: "all", // optional
   });
 
   return response.data;

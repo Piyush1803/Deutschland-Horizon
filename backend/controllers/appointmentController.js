@@ -5,8 +5,6 @@ import {
   getAppointmentById
 } from "../models/appointmentModel.js";
 import { sendMeetingEmail } from "../services/mailService.js";
-
-
 import { createGoogleCalendarEvent } from "../services/googleCalendarService.js";
 
 // GET /api/appointments/available-dates
@@ -27,8 +25,11 @@ export const fetchAvailableSlots = (req, res) => {
   });
 };
 
+// POST /api/appointments/book
 export const handleBookAppointment = (req, res) => {
   const { id, name, email } = req.body;
+
+  console.log('Request Body:', req.body);
 
   if (!id || !name || !email) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -41,8 +42,6 @@ export const handleBookAppointment = (req, res) => {
       console.error('Database error:', err);
       return res.status(500).json({ error: "Database error" });
     }
-
-    console.log('Database result:', result);
 
     if (result.affectedRows === 0) {
       return res.status(400).json({ message: "Slot already booked" });
@@ -58,48 +57,54 @@ export const handleBookAppointment = (req, res) => {
       console.log('Appointment details:', appointment);
 
       try {
-        // Create Google Calendar Event
+        // Create Google Calendar Event with Meet link
         const calendarEvent = await createGoogleCalendarEvent(appointment);
         console.log('Calendar event created:', calendarEvent);
 
-        // Extract Google Meet link and appointment date
-        const meetLink = calendarEvent.hangoutLink;
-        const date = new Date(appointment.start_time).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+        // ✅ Extract Google Meet link safely
+        const meetLink = calendarEvent.conferenceData?.entryPoints?.find(
+          entry => entry.entryPointType === "video"
+        )?.uri || "Link not available";
 
-        // Prepare email contents
+        // Format the appointment date
+        const date = new Date(appointment.start_time).toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata"
+        });
+
+        // Prepare email content
         const userEmailBody = `
-        Dear ${appointment.name},
+Dear ${appointment.name},
 
-        Your appointment is confirmed!
+Your appointment is confirmed!
 
-        📅 Date & Time: ${date}
-        📞 Google Meet Link: ${meetLink}
+📅 Date & Time: ${date}
+📞 Google Meet Link: ${meetLink}
 
-        See you then!
+See you then!
 
-        Regards,
-        Deutschland Horizon
+Regards,  
+Deutschland Horizon
         `;
 
         const adminEmailBody = `
-        📢 New Appointment Booked!
+📢 New Appointment Booked!
 
-        👤 Name: ${appointment.name}
-        📧 Email: ${appointment.email}
-        📅 Date & Time: ${date}
-        📞 Google Meet Link: ${meetLink}
+👤 Name: ${appointment.name}
+📧 Email: ${appointment.email}
+📅 Date & Time: ${date}
+📞 Google Meet Link: ${meetLink}
         `;
 
-        // Send email to user
+        // Send confirmation email to user
         await sendMeetingEmail({
           to: appointment.email,
           subject: "Your Appointment Confirmation",
           text: userEmailBody
         });
 
-        // Send email to admin (yourself)
+        // Send notification to admin
         await sendMeetingEmail({
-          to: "your.email@gmail.com", // replace with your actual email
+          to: "germanysoon0@gmail.com",
           subject: "New Appointment Booked",
           text: adminEmailBody
         });
@@ -116,4 +121,3 @@ export const handleBookAppointment = (req, res) => {
     });
   });
 };
-

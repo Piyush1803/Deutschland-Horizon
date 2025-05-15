@@ -71,7 +71,7 @@ const AppointmentModal = ({ closeModal }) => {
 
     try {
       const payload = {
-        id: selectedSlot.id,
+        slotId: selectedSlot.id,
         name: formData.name,
         email: formData.email
       };

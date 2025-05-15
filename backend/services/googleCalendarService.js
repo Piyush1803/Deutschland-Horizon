@@ -1,6 +1,10 @@
 import { google } from "googleapis";
 import path from "path";
 import { fileURLToPath } from "url";
+import { sendMeetingEmail } from "./mailService.js";
+
+
+
 
 // Get the directory name of the current module
 const __filename = fileURLToPath(import.meta.url);
@@ -25,17 +29,16 @@ const calendarId = "germanysoon0@gmail.com";
 // Function to create an event
 export async function createGoogleCalendarEvent(appointment) {
   const startTime = new Date(appointment.start_time);
-  const endTime = new Date(startTime.getTime() + 3 * 60 * 60 * 1000);
-
+  const endTime = new Date(appointment.end_time);
   const event = {
     summary: `Appointment with ${appointment.name}`,
     description: `Email: ${appointment.email}`,
     start: {
-      dateTime: appointment.start_time,
+      dateTime: startTime.toISOString(),
       timeZone: "Asia/Kolkata",
     },
     end: {
-      dateTime: appointment.end_time,
+      dateTime: endTime.toISOString(),
       timeZone: "Asia/Kolkata",
     },
   };
@@ -43,8 +46,38 @@ export async function createGoogleCalendarEvent(appointment) {
   const response = await calendar.events.insert({
     calendarId,
     resource: event,
-    sendUpdates: "all", // optional
+    conferenceDataVersion: 1,
   });
+
+  await sendMeetingEmail({
+    to: appointment.email,
+    subject: "Your appointment is confirmed",
+    text: `
+      Hi ${appointment.name},
+  
+      Your appointment is confirmed with the following details:
+  
+      Start Time: ${appointment.start_time}
+      End Time: ${appointment.end_time}
+  
+      Thank you!
+    `,
+  });
+
+  
+  await sendMeetingEmail({
+    to: "germanysoon0@gmail.com", // Replace with your admin email
+    subject: `New Appointment Booked by ${appointment.name}`,
+    text: `
+      A new appointment has been booked:
+  
+      Name: ${appointment.name}
+      Email: ${appointment.email}
+      Start Time: ${appointment.start_time}
+      End Time: ${appointment.end_time}
+    `,
+  });
+  
 
   return response.data;
 }

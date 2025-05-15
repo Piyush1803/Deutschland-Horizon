@@ -1,9 +1,14 @@
-// controllers/paymentController.js
 import Stripe from "stripe";
-import db from "../config/db.js";
+import {
+  bookAppointment,
+  getAppointmentById,
+} from "../models/appointmentModel.js";
+import { sendMeetingEmail } from "../services/mailService.js";
+import { createGoogleCalendarEvent } from "../services/googleCalendarService.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// Create checkout session with metadata containing slotId, name, email
 export const createCheckoutSession = async (req, res) => {
   const { name, email, slotId } = req.body;
 
@@ -24,8 +29,9 @@ export const createCheckoutSession = async (req, res) => {
       customer_email: email,
       success_url: `http://localhost:5173/success?payment=success`,
       cancel_url: `http://localhost:5173/cancel`,
-      metadata: { name, email, slotId }
+      metadata: { name, email, slotId },  // important metadata here
     });
+
 
     res.json({ url: session.url });
   } catch (err) {
@@ -34,36 +40,68 @@ export const createCheckoutSession = async (req, res) => {
   }
 };
 
+// Webhook to handle successful payments & book appointments ONLY here
 export const handleStripeWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET
+    );
   } catch (err) {
     console.error("Webhook error:", err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     const { name, email, slotId } = session.metadata;
 
-    const query = `
-      INSERT INTO appointments (name, email, slot_id, start_time, end_time)
-      SELECT ?, ?, id, start_time, DATE_ADD(start_time, INTERVAL 3 HOUR)
-      FROM slots WHERE id = ? AND is_booked = FALSE
-    `;
-
-    db.query(query, [name, email, slotId], (err, result) => {
+    // Book the appointment only after payment success
+    bookAppointment({ id: slotId, name, email }, (err, result) => {
       if (err) {
-        console.error("DB error during appointment booking:", err);
-      } else if (result.affectedRows > 0) {
-        db.query("UPDATE slots SET is_booked = TRUE WHERE id = ?", [slotId]);
-        console.log("✅ Appointment booked after payment for", name);
-      } else {
-        console.warn("⚠️ Slot already booked or not found:", slotId);
+        console.error("Database error during booking:", err);
+        return;
       }
+      if (result.affectedRows === 0) {
+        console.warn("Slot already booked or not found:", slotId);
+        return;
+      }
+
+      // Fetch appointment details to create calendar event and send email
+      getAppointmentById(slotId, async (err, rows) => {
+        if (err || !rows.length) {
+          console.error("Failed to fetch appointment details:", err);
+          return;
+        }
+
+        const appointment = rows[0];
+
+        try {
+          const calendarEvent = await createGoogleCalendarEvent(appointment);
+
+          const meetLink = calendarEvent.conferenceData?.entryPoints?.find(
+            (e) => e.entryPointType === "video"
+          )?.uri;
+
+          await sendMeetingEmail({
+            to: email,
+            subject: "Your Appointment Confirmation",
+            text: `Your appointment is confirmed for ${new Date(
+              appointment.start_time
+            ).toLocaleString()}. 
+            Google Meet: ${meetLink || "Link not available"}`,
+          });
+
+          console.log("✅ Payment & booking completed for", name);
+        } catch (error) {
+          console.error("Failed to send email or create calendar event:", error);
+        }
+      });
     });
   }
 

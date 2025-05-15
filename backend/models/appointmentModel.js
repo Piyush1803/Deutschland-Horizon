@@ -20,18 +20,18 @@ export const getAvailableSlots = (date, callback) => {
   db.query(query, [date], callback);
 };
 
-// Book an appointment slot by ID and update name/email/is_booked
+// Book an appointment slot by ID (used internally only after payment success)
 export const bookAppointment = (appointmentData, callback) => {
-    const query = `
+  const { name, email, id } = appointmentData;
+  const query = `
     UPDATE appointments
     SET name = ?, email = ?, is_booked = TRUE, end_time = start_time + INTERVAL 3 HOUR
     WHERE id = ? AND is_booked = FALSE
   `;
-  const { name, email, id } = appointmentData;
   db.query(query, [name, email, id], callback);
 };
 
-// Get appointment details by ID (for Google Calendar)
+// Get appointment details by ID (for calendar/email)
 export const getAppointmentById = (id, callback) => {
   const query = `
     SELECT * FROM appointments WHERE id = ?

@@ -31,5 +31,4 @@ build/
 .idea/
 
 
-backend/config/*.json
-
+backend/config/google-service-account.json

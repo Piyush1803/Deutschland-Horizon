@@ -2,14 +2,9 @@ import React from 'react'
 import Home from './pages/Home'
 import { Route, Routes } from 'react-router-dom'
 import About from './pages/About'
-import SuccessPage from './pages/successPage'
+import SuccessPage from './pages/SuccessPage'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
-
-
-
-
-
 
 function App() {
   return (
